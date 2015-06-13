@@ -1,0 +1,83 @@
+import Data.Char
+
+--Ejercicio 1)
+esMin :: Char -> Bool
+esMin x | ord x >= 97 && ord x <= 122 = True        
+        | otherwise = False
+		
+letANat :: Char -> Integer 
+letANat x | esMin x = toInteger (ord x - 97) 
+
+natALet :: Integer -> Char
+natALet x | x <= 25 && x >=0 = chr (fromIntegral (x)+97)
+		  | otherwise = error "El valor no se encuentra dentro del rango permitido."
+		  
+cantMinusc :: String -> Integer
+cantMinusc palabra | length palabra == 0 = 0
+				   | esMin (head palabra) = 1 + cantMinusc (tail palabra)
+				   | otherwise = cantMinusc (tail palabra)
+				   
+desplazar :: Integer -> Char -> Char
+desplazar n ' ' = ' '
+desplazar n l  | esMin l = natALet (mod ((letANat l)+n) 26)
+		       | otherwise = l
+					   
+contar :: Char -> String -> Integer
+contar l palabra | length palabra == 0 = 0
+				 | l == head palabra = 1 + contar l (tail palabra)
+				 | otherwise = contar l (tail palabra)
+				 
+--Ejercicio 2)				 
+codificar :: Integer -> String -> String
+codificar n [] = []
+codificar n " " = " "
+codificar n palabra = [desplazar n (head palabra)] ++ codificar n (tail palabra) 
+
+--Ejercicio 3)
+decodificar :: Integer -> String -> String
+decodificar n [] = []
+decodificar n " " = " " 
+decodificar n palabra = codificar (-n) palabra 
+
+--Ejercicio 4)
+contar2 :: Integer -> String -> [Float]
+contar2 x palabra | length palabra == 1 && esMin (head palabra) == False = [0.0]
+				  | length (tail palabra) == 0 = []				  
+				  | x >= 0 && x < 25 = [((fromInteger(contar (natALet x) palabra))*100)/fromInteger(cantMinusc palabra)] ++ contar2 (x+1) palabra 
+				  | otherwise = [0.0]
+
+frec :: String -> [Float]
+frec palabra = contar2 0 palabra
+
+--Ejercicio 5)
+rotar :: Integer -> [a] -> [a]
+rotar n [] = []
+rotar n lista | n == 0 = lista
+			  | n > 0 = drop (fromInteger n) lista ++ take (fromInteger n) lista 
+
+--Ejercicio 6)
+chi2 :: [Float] -> [Float] -> Float
+chi2 xs ys | length xs == 0 = 0
+		   | length xs == length ys = (((head xs)-(head ys))**2)/(head ys) + chi2 (tail xs) (tail ys)
+		  -- | otherwise == undefined
+
+--Ejercicio 7)
+castellano :: [Float]
+castellano = [12.52, 1.42, 4.67, 5.85, 13.67, 0.67, 1.01, 0.70, 6.24, 0.44, 0.01, 4.96, 3.15, 6.70, 8.67, 2.51, 0.88, 6.86, 7.97, 4.62, 3.92, 0.90, 0.02, 0.22, 0.90, 0.52]
+		   
+aux :: Integer -> [Float] -> [Float] -> [Float]
+aux n lista1 lista2 | length lista1 == 0 = []
+					| n >=0 && n <=26 = [chi2 (rotar n lista1) (lista2)] ++ aux (n+1) lista1 lista2
+					| otherwise= []
+
+minimo :: [Float] -> Float
+minimo lista | length lista ==1 = head lista
+minimo lista = min (head lista) (minimo (tail lista))
+
+posMin :: [Float] -> Integer
+posMin lista | length lista == 0 = 0
+			   | minimo lista /= head lista = 1 + posMin (tail lista)
+			   | otherwise = 1
+					
+descifrar :: String -> String
+descifrar palabra = decodificar (posMin (aux 1 (frec (palabra)) castellano)) palabra
